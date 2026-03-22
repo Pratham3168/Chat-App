@@ -1,0 +1,21 @@
+{
+  "name": "chat-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build":"npm install --prefix Server && npm install --prefix Client && npm run build --prefix Client",
+    "start":"npm run start --prefix Server"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Pratham3168/Chat-App.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Pratham3168/Chat-App/issues"
+  },
+  "homepage": "https://github.com/Pratham3168/Chat-App#readme"
+}
