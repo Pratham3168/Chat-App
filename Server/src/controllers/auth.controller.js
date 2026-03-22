@@ -1,6 +1,10 @@
 import User from "../models/User.js";
 import { generateToken } from "../lib/utils.js";
 import bcrypt from "bcryptjs";
+import { sendWelcomeEmail } from "../emails/emailHandlers.js";
+import dotenv from 'dotenv';
+dotenv.config();
+
 
 export const signup = async (req, res) => {
   const { fullName, email, password } = req.body || {};
@@ -40,12 +44,18 @@ export const signup = async (req, res) => {
       const savedUser = await newUser.save();
       generateToken(savedUser._id, res);
 
+
       res.status(201).json({
         _id: savedUser._id,
         fullName: newUser.fullName,
         email: newUser.email,
         profilePic: newUser.profilePic,
       });
+      try {
+        await sendWelcomeEmail(savedUser.email, savedUser.fullName, process.env.CLIENT_URL);
+      } catch (error) {
+        console.error("Failed to send welcome email:", error);
+      }
     } else {
       res.status(400).json({ message: "Invalid User Data" });
     }
@@ -93,6 +103,7 @@ export const login = async (req, res) => {
 
 };
 
-export const logout = (req, res) => {
-  res.send("Logout Route");
+export const logout = (_, res) => {
+  res.cookie("jwt", "", { maxAge: 0 });
+  res.status(200).json({ message: "Logged out successfully" });
 };
