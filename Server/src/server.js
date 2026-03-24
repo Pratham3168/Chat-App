@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import path from 'path';
 import dotenv from 'dotenv';
 import { connectDB } from './lib/db.js';
@@ -19,6 +20,7 @@ const __dirname = path.resolve();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 app.use('/api/auth',authRoutes);
 app.use('/api/message',messageRoutes);
