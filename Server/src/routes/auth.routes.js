@@ -8,8 +8,6 @@ const router = express.Router();
 
 router.use(arcjetProtection);
 
-router.get('/check', protectRoute, (req, res) => res.status(200).json("Testing the arcjet protection"));
-
 router.post('/signup',signup);
 
 router.post('/login',login);

@@ -14,12 +14,13 @@ const PORT = process.env.PORT || 3000;
 
 
 const app = express();
+const REQUEST_BODY_LIMIT = '10mb';
 
 const __dirname = path.resolve();
 
 app.use(cors({origin:process.env.CLIENT_URL, credentials:true}));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: REQUEST_BODY_LIMIT }));
+app.use(express.urlencoded({ extended: true, limit: REQUEST_BODY_LIMIT }));
 app.use(cookieParser());
 
 app.use('/api/auth',authRoutes);

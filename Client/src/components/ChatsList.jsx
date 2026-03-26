@@ -1,12 +1,39 @@
-import React from 'react'
+import { useEffect } from "react";
+import { useChatStore } from "../stores/useChatStore";
+import UserLoadingSkeleton from "./UserLoadingSkeleton.jsx";
+import NoChatsFound from "./NoChatsFound";
+// import { useAuthStore } from "../stores/useAuthStore";
 
 function ChatsList() {
-  return (
-    <div>
-        <h2 className="text-lg font-semibold text-white">Chats List</h2>
-      
-    </div>
-  )
-}
+  const { getMyChatPartners, chats, isUsersLoading, setSelectedUser } = useChatStore();
+  const chatsList = Array.isArray(chats) ? chats : [];
 
-export default ChatsList
+  useEffect(() => {
+    getMyChatPartners();
+  }, [getMyChatPartners]);
+
+  if (isUsersLoading) return <UserLoadingSkeleton />;
+  if (chatsList.length === 0) return <NoChatsFound />;
+
+  return (
+    <>
+      {chatsList.map((chat) => (
+        <div
+          key={chat._id}
+          className="bg-cyan-500/10 p-4 rounded-lg cursor-pointer hover:bg-cyan-500/20 transition-colors"
+          onClick={() => setSelectedUser(chat)}
+        >
+          <div className="flex items-center gap-3">
+            <div className={`avatar online`}>
+              <div className="size-12 rounded-full">
+                <img src={chat.profilePic || "/avatar.png"} alt={chat.fullName} />
+              </div>
+            </div>
+            <h4 className="text-slate-200 font-medium truncate">{chat.fullName}</h4>
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+export default ChatsList;

@@ -3,9 +3,9 @@ import {create} from 'zustand';
 import { axiosInstance } from '../lib/axios';
 
 export const useChatStore = create((set,get) => ({
-    allContacts : null,
-    chats: null,
-    messags: null,
+    allContacts : [],
+    chats: [],
+    messages: [],
     activeTab : "chats",
     isUsersLoading: false,
     selectedUser: null,
@@ -26,7 +26,7 @@ export const useChatStore = create((set,get) => ({
 
         set({isUsersLoading: true});
         try{
-            const res = await axiosInstance.get("/messages/contacts");
+            const res = await axiosInstance.get("/message/contacts");
             set({allContacts: res.data});
         } catch (error) {
             toast.error(error.response?.data?.message || "Failed to fetch contacts");
@@ -41,7 +41,7 @@ export const useChatStore = create((set,get) => ({
         set({isUsersLoading: true});
 
         try{
-            const res = await axiosInstance.get("/messages/chats");
+            const res = await axiosInstance.get("/message/chats");
             set({chats: res.data});
         }
         catch(error){
@@ -56,7 +56,7 @@ export const useChatStore = create((set,get) => ({
     getMessageByUserId : async (userId) => {
         set({isMessagesLoading: true});
         try{
-            const res = await axiosInstance.get(`/messages/${userId}`);
+            const res = await axiosInstance.get(`/message/${userId}`);
             set({messages: res.data});
         }catch(error){
             toast.error(error.response?.data?.message || "Failed to fetch messages");
@@ -64,4 +64,7 @@ export const useChatStore = create((set,get) => ({
             set({isMessagesLoading: false});
         }
     }
+
+   
+
 }))
