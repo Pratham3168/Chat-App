@@ -8,12 +8,13 @@ dotenv.config();
 
 import authRoutes from './routes/auth.routes.js'
 import messageRoutes from './routes/message.routes.js'
+import { app, server } from './lib/socket.js';
 
 
 const PORT = process.env.PORT || 3000;
 
 
-const app = express();
+// const app = express();
 const REQUEST_BODY_LIMIT = '10mb';
 
 const __dirname = path.resolve();
@@ -40,7 +41,7 @@ if(process.env.NODE_ENV === 'production'){
 
 
 
-app.listen(PORT,()=>{
+server.listen(PORT,()=>{
   console.log(`Server is Listening on port ${PORT}`);
     connectDB();
  });
