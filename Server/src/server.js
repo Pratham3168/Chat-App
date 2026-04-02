@@ -8,6 +8,7 @@ dotenv.config();
 
 import authRoutes from './routes/auth.routes.js'
 import messageRoutes from './routes/message.routes.js'
+import friendRoutes from './routes/friend.routes.js'
 import { app, server } from './lib/socket.js';
 
 
@@ -26,6 +27,7 @@ app.use(cookieParser());
 
 app.use('/api/auth',authRoutes);
 app.use('/api/message',messageRoutes);
+app.use('/api/friend',friendRoutes);
 
 
 // MAKING READY FOR PRODUCTION

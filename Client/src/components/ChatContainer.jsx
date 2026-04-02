@@ -41,14 +41,14 @@ function ChatContainer() {
       <ChatHeader />
       <div className="flex-1 px-6 overflow-y-auto py-8">
         {messages.length > 0 && !isMessagesLoading ? (
-          <div className="max-w-3xl mx-auto space-y-6">
+          <div className="max-w-7xl mx-auto space-y-6">
             {messages.map((msg) => (
               <div
                 key={msg._id}
                 className={`chat ${msg.senderId === authUser._id ? "chat-end" : "chat-start"}`}
               >
                 <div
-                  className={`chat-bubble rounded-5xl relative ${
+                  className={`chat-bubble max-w-2xl rounded-5xl relative ${
                     msg.senderId === authUser._id
                       ? "bg-cyan-600 text-white"
                       : "bg-slate-800 text-slate-200"
