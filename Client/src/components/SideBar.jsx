@@ -3,7 +3,8 @@ import {
   Users,
   UserPlus,
   Settings,
-  LogOut
+  LogOut,
+  Search,
 } from "lucide-react";
 
 import { useChatStore } from "../stores/useChatStore";
@@ -12,6 +13,7 @@ import { useAuthStore } from "../stores/useAuthStore";
 const menu = [
   { id: "chats", icon: MessageCircle },
   { id: "contacts", icon: Users },
+  { id: "search", icon: Search },
   { id: "requests", icon: UserPlus },
   { id: "settings", icon: Settings },
 ];

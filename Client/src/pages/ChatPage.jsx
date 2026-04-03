@@ -5,6 +5,7 @@ import ProfileHeader from "../components/ProfileHeader";
 import ActiveTabSwitch from "../components/ActiveTabSwitch";
 import ChatsList from "../components/ChatsList";
 import ContactList from "../components/ContactList";
+import SearchUser from "../components/SearchUser";
 import ChatContainer from "../components/ChatContainer";
 import NoConversationPlaceholder from "../components/NoConversationPlaceholder";
 import Sidebar from "../components/SideBar.jsx";
@@ -28,7 +29,11 @@ function ChatPage() {
           {/* <ActiveTabSwitch /> */}
 
           <div className="flex-1 overflow-y-auto p-4 space-y-2">
-            {activeTab === "chats" ? <ChatsList /> : <ContactList />}
+            {activeTab === "chats" && <ChatsList />}
+            {activeTab === "contacts" && <ContactList />}
+            {activeTab === "search" && <SearchUser />}
+            {activeTab === "requests" && <ContactList />}
+            {activeTab === "settings" && <ContactList />}
           </div>
         </div>
 

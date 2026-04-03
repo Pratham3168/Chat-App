@@ -1,4 +1,5 @@
 import FriendRequest from "../models/FriendRequest.js";
+import User from "../models/User.js";
 
 export const getIncomingRequests = async (req, res) => {
   try {
@@ -39,8 +40,18 @@ export const sendFriendRequest = async (req, res) => {
     const senderId = req.user._id;
 
     try{
+        const receiverExists = await User.exists({ _id: receiverId });
+        if (!receiverExists) {
+          return res.status(404).json({ message: "Receiver user not found" });
+        }
+
         if(senderId.toString() === receiverId){
             return res.status(400).json({ message: "You cannot send a friend request to yourself" });
+        }
+
+        const senderUser = await User.findById(senderId).select("friends");
+        if (senderUser?.friends?.some((id) => id.toString() === receiverId)) {
+          return res.status(400).json({ message: "You are already friends" });
         }
 
         const existingRequest = await FriendRequest.findOne({
@@ -90,6 +101,15 @@ export const acceptFriendRequest = async (req, res) => {
     request.status = "accepted";
     await request.save();
 
+    await Promise.all([
+      User.findByIdAndUpdate(request.senderId, {
+        $addToSet: { friends: request.receiverId },
+      }),
+      User.findByIdAndUpdate(request.receiverId, {
+        $addToSet: { friends: request.senderId },
+      }),
+    ]);
+
     res.status(200).json({ message: "Friend request accepted", request });
   } catch (error) {
     console.error("Error accepting friend request:", error);
@@ -118,6 +138,19 @@ export const rejectFriendRequest = async (req, res) => {
     res.status(200).json({ message: "Friend request rejected", request });
   } catch (error) {
     console.error("Error rejecting friend request:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getMyFriends = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id)
+      .select("friends")
+      .populate("friends", "fullName email profilePic");
+
+    res.status(200).json(user?.friends || []);
+  } catch (error) {
+    console.error("Error fetching friends list:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
