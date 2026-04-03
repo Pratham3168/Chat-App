@@ -1,7 +1,7 @@
 import {
   MessageCircle,
   Users,
-  UserPlus,
+  Inbox,
   Settings,
   LogOut,
   Search,
@@ -14,7 +14,7 @@ const menu = [
   { id: "chats", icon: MessageCircle },
   { id: "contacts", icon: Users },
   { id: "search", icon: Search },
-  { id: "requests", icon: UserPlus },
+  { id: "requests", icon: Inbox },
   { id: "settings", icon: Settings },
 ];
 

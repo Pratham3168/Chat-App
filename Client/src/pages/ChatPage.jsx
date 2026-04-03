@@ -6,6 +6,8 @@ import ActiveTabSwitch from "../components/ActiveTabSwitch";
 import ChatsList from "../components/ChatsList";
 import ContactList from "../components/ContactList";
 import SearchUser from "../components/SearchUser";
+import RequestsIncoming from "../components/RequestsIncoming";
+import RequestsOutgoing from "../components/RequestsOutgoing";
 import ChatContainer from "../components/ChatContainer";
 import NoConversationPlaceholder from "../components/NoConversationPlaceholder";
 import Sidebar from "../components/SideBar.jsx";
@@ -32,7 +34,14 @@ function ChatPage() {
             {activeTab === "chats" && <ChatsList />}
             {activeTab === "contacts" && <ContactList />}
             {activeTab === "search" && <SearchUser />}
-            {activeTab === "requests" && <ContactList />}
+            {activeTab === "requests" && (
+              <>
+                <h3 className="text-xs uppercase tracking-wide text-slate-400 px-1">Incoming</h3>
+                <RequestsIncoming />
+                <h3 className="text-xs uppercase tracking-wide text-slate-400 px-1 pt-2">Outgoing</h3>
+                <RequestsOutgoing />
+              </>
+            )}
             {activeTab === "settings" && <ContactList />}
           </div>
         </div>
