@@ -3,6 +3,7 @@ import { protectRoute } from "../middlewares/auth.middleware.js";
 import { arcjetProtection } from "../middlewares/arcjet.middleware.js";
 import {
   acceptFriendRequest,
+  cancelFriendRequest,
   getMyFriends,
   getIncomingRequests,
   getOutgoingRequests,
@@ -20,5 +21,6 @@ router.get("/list", getMyFriends);
 router.post("/send/:id", sendFriendRequest);
 router.post("/:id/accept", acceptFriendRequest);
 router.post("/:id/reject", rejectFriendRequest);
+router.post("/:id/cancel", cancelFriendRequest);
 
 export default router;

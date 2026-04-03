@@ -12,7 +12,7 @@ import { useAuthStore } from "../stores/useAuthStore";
 
 const menu = [
   { id: "chats", icon: MessageCircle },
-  { id: "contacts", icon: Users },
+  { id: "friends", icon: Users },
   { id: "search", icon: Search },
   { id: "requests", icon: Inbox },
   { id: "settings", icon: Settings },

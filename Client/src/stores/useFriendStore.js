@@ -93,6 +93,17 @@ export const useFriendStore = create((set, get) => ({
     }
   },
 
+  // 🔹 Cancel outgoing request
+  cancelFriendRequest: async (requestId) => {
+    try {
+      await axiosInstance.post(`/friend/${requestId}/cancel`);
+      toast.success("Cancelled");
+      await get().fetchFriendData();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to cancel request");
+    }
+  },
+
   // 🔹 THIS is the only helper you need
   getRelationshipStatus: (userId) => {
     const { friends, incomingRequests, outgoingRequests } = get();

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check, Clock3, MessageCircle, Search, UserPlus } from "lucide-react";
+import { Check, Clock3, MessageCircle, Search, UserPlus, X } from "lucide-react";
 import { axiosInstance } from "../lib/axios";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useChatStore } from "../stores/useChatStore";
@@ -19,6 +19,7 @@ function SearchUser({ minChars = 2, debounceMs = 400 }) {
     sendFriendRequest,
     acceptFriendRequest,
     rejectFriendRequest,
+    cancelFriendRequest,
     isLoading: isFriendDataLoading,
   } = useFriendStore();
 
@@ -85,6 +86,10 @@ function SearchUser({ minChars = 2, debounceMs = 400 }) {
     return useFriendStore.getState().incomingRequests.find((request) => request.senderId?._id === userId)?._id;
   };
 
+  const getOutgoingRequestId = (userId) => {
+    return useFriendStore.getState().outgoingRequests.find((request) => request.receiverId?._id === userId)?._id;
+  };
+
   const handleSendRequest = async (user) => {
     if (sendingIds.includes(user._id)) return;
 
@@ -114,15 +119,24 @@ function SearchUser({ minChars = 2, debounceMs = 400 }) {
     }
 
     if (status === "sending" || status === "outgoing") {
+      const outgoingRequestId = getOutgoingRequestId(user._id);
+
       return (
-        <button
-          type="button"
-          disabled
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-amber-500/20 text-amber-300 text-sm cursor-not-allowed opacity-90"
-        >
-          <Clock3 size={15} />
-          {/* {status === "sending" ? "Sending..." : "Request Sent"} */}
-        </button>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-amber-500/20 text-amber-300 text-sm opacity-90">
+            <Clock3 size={15} />
+            Pending
+          </span>
+          <button
+            type="button"
+            disabled={!outgoingRequestId}
+            onClick={() => cancelFriendRequest(outgoingRequestId)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-slate-700/70 text-slate-200 hover:bg-slate-700 transition-colors text-sm disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <X size={15} />
+            Cancel
+          </button>
+        </div>
       );
     }
 

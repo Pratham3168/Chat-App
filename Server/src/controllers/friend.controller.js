@@ -142,6 +142,30 @@ export const rejectFriendRequest = async (req, res) => {
   }
 };
 
+export const cancelFriendRequest = async (req, res) => {
+  const { id: requestId } = req.params;
+  const userId = req.user._id;
+
+  try {
+    const request = await FriendRequest.findOne({
+      _id: requestId,
+      senderId: userId,
+      status: "pending",
+    });
+
+    if (!request) {
+      return res.status(404).json({ message: "Friend request not found" });
+    }
+
+    await request.deleteOne();
+
+    res.status(200).json({ message: "Friend request cancelled" });
+  } catch (error) {
+    console.error("Error cancelling friend request:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 export const getMyFriends = async (req, res) => {
   try {
     const user = await User.findById(req.user._id)

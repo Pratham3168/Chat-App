@@ -12,6 +12,7 @@ import ChatContainer from "../components/ChatContainer";
 import NoConversationPlaceholder from "../components/NoConversationPlaceholder";
 import Sidebar from "../components/SideBar.jsx";
 import Header from "../components/Header.jsx";
+import FriendsList from "../components/FriendsList.jsx";
 
 function ChatPage() {
   const { activeTab, selectedUser } = useChatStore();
@@ -32,7 +33,8 @@ function ChatPage() {
 
           <div className="flex-1 overflow-y-auto p-4 space-y-2">
             {activeTab === "chats" && <ChatsList />}
-            {activeTab === "contacts" && <ContactList />}
+            {/* {activeTab === "contacts" && <ContactList />} */}
+            {activeTab === "friends" && <FriendsList />}
             {activeTab === "search" && <SearchUser />}
             {activeTab === "requests" && (
               <>
