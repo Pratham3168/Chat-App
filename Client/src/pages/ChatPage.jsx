@@ -44,7 +44,8 @@ function ChatPage() {
                 <RequestsOutgoing />
               </>
             )}
-            {activeTab === "settings" && <ContactList />}
+            {/* Privacy-first mode: disable broad contacts list in UI */}
+            {/* {activeTab === "settings" && <ContactList />} */}
           </div>
         </div>
 

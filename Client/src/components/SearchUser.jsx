@@ -38,17 +38,13 @@ function SearchUser({ minChars = 2, debounceMs = 400 }) {
 
       setIsSearching(true);
       try {
-        const res = await axiosInstance.get("/message/contacts");
+        const res = await axiosInstance.get("/friend/search", {
+          params: { q: trimmed, limit: 30 },
+        });
         const users = Array.isArray(res.data) ? res.data : [];
-        const keyword = trimmed.toLowerCase();
 
         const filtered = users
           .filter((user) => user._id !== authUser?._id)
-          .filter((user) => {
-            const name = (user.fullName || "").toLowerCase();
-            const email = (user.email || "").toLowerCase();
-            return name.includes(keyword) || email.includes(keyword);
-          })
           .map((user) => {
             const relationshipStatus = getRelationshipStatus(user._id);
 
@@ -113,7 +109,7 @@ function SearchUser({ minChars = 2, debounceMs = 400 }) {
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30 transition-colors text-sm"
         >
           <MessageCircle size={15} />
-          Message
+          {/* Message */}
         </button>
       );
     }

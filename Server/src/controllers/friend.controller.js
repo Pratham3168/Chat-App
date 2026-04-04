@@ -1,6 +1,34 @@
 import FriendRequest from "../models/FriendRequest.js";
 import User from "../models/User.js";
 
+export const searchUsers = async (req, res) => {
+  const requesterId = req.user._id;
+  const query = (req.query.q || "").trim();
+  const limit = Math.min(Math.max(Number.parseInt(req.query.limit || "20", 10), 1), 50);
+
+  try {
+    if (query.length < 2) {
+      return res.status(200).json([]);
+    }
+
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(escapedQuery, "i");
+
+    const users = await User.find({
+      _id: { $ne: requesterId },
+      $or: [{ fullName: regex }, { email: regex }],
+    })
+      .select("fullName email profilePic")
+      .limit(limit)
+      .sort({ fullName: 1 });
+
+    res.status(200).json(users);
+  } catch (error) {
+    console.error("Error searching users:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 export const getIncomingRequests = async (req, res) => {
   try {
     const incomingRequests = await FriendRequest.find({

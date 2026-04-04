@@ -8,6 +8,7 @@ import {
   getIncomingRequests,
   getOutgoingRequests,
   rejectFriendRequest,
+  searchUsers,
   sendFriendRequest,
 } from "../controllers/friend.controller.js";
 
@@ -18,6 +19,7 @@ router.use(arcjetProtection, protectRoute);
 router.get("/incoming", getIncomingRequests);
 router.get("/outgoing", getOutgoingRequests);
 router.get("/list", getMyFriends);
+router.get("/search", searchUsers);
 router.post("/send/:id", sendFriendRequest);
 router.post("/:id/accept", acceptFriendRequest);
 router.post("/:id/reject", rejectFriendRequest);

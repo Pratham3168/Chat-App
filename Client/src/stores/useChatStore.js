@@ -5,7 +5,8 @@ import { useAuthStore } from './useAuthStore';
 import { Socket } from 'socket.io-client';
 
 export const useChatStore = create((set,get) => ({
-    allContacts : [],
+    // Privacy-first mode: keep contact flow disabled for now
+    // allContacts : [],
     chats: [],
     messages: [],
     activeTab : "chats",
@@ -24,19 +25,19 @@ export const useChatStore = create((set,get) => ({
     setSelectedUser: (selectedUser) => set({ selectedUser }),
 
 
-    getAllContacts : async () => {
+    // getAllContacts : async () => {
 
-        set({isUsersLoading: true});
-        try{
-            const res = await axiosInstance.get("/message/contacts");
-            set({allContacts: res.data});
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to fetch contacts");
-        } finally {
-            set({isUsersLoading: false});
-        }
+    //     set({isUsersLoading: true});
+    //     try{
+    //         const res = await axiosInstance.get("/message/contacts");
+    //         set({allContacts: res.data});
+    //     } catch (error) {
+    //         toast.error(error.response?.data?.message || "Failed to fetch contacts");
+    //     } finally {
+    //         set({isUsersLoading: false});
+    //     }
 
-    },
+    // },
 
 
     getMyChatPartners : async () => {
