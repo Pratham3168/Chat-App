@@ -114,16 +114,32 @@ export const logout = (_, res) => {
 
 export const updateProfile = async (req, res) => {
   try {
-    const { profilePic } = req.body;
-    if (!profilePic) return res.status(400).json({ message: "Profile pic is required" });
+    const { profilePic, fullName } = req.body || {};
+    const trimmedFullName = typeof fullName === "string" ? fullName.trim() : "";
+
+    if (!profilePic && !trimmedFullName) {
+      return res.status(400).json({ message: "Provide fullName or profilePic to update" });
+    }
+
+    if (fullName !== undefined && trimmedFullName.length < 2) {
+      return res.status(400).json({ message: "Full name must be at least 2 characters" });
+    }
 
     const userId = req.user._id;
+    const updateFields = {};
 
-    const uploadResponse = await cloudinary.uploader.upload(profilePic);
+    if (trimmedFullName) {
+      updateFields.fullName = trimmedFullName;
+    }
+
+    if (profilePic) {
+      const uploadResponse = await cloudinary.uploader.upload(profilePic);
+      updateFields.profilePic = uploadResponse.secure_url;
+    }
 
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { profilePic: uploadResponse.secure_url },
+      updateFields,
       { new: true }
     ).select("_id fullName email profilePic");
 

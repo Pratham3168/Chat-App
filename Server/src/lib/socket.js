@@ -24,6 +24,15 @@ export function getReceiverSocketId(userId){
     return userSocketsMap[userId];
 }
 
+export function emitToUser(userId,eventName,payload){
+    const socketId = getReceiverSocketId(userId);
+    if(!socketId){
+        return false;
+    }
+    io.to(socketId).emit(eventName,payload);
+    return true;
+}
+
 io.on("connection", (socket) => {
     console.log("A user connected : ",socket.user.fullName);
 

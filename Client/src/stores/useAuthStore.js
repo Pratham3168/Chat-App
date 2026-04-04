@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
+import { useFriendStore } from "./useFriendStore";
 
 
 
@@ -120,6 +121,14 @@ export const useAuthStore = create((set,get) =>({
 
         socket.on("getOnlineUsers",(userIds) => {
             set({onlineUsers:userIds});
+        });
+
+        socket.on("friend:request:created", (payload) => {
+            useFriendStore.getState().handleFriendRequestCreated(payload);
+        });
+
+        socket.on("friend:request:accepted", (payload) => {
+            useFriendStore.getState().handleFriendRequestAccepted(payload, get().authUser?._id);
         });
     },
 

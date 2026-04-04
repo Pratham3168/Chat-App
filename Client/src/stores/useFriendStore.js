@@ -8,6 +8,51 @@ export const useFriendStore = create((set, get) => ({
   outgoingRequests: [],
   isLoading: false,
 
+  handleFriendRequestCreated: ({ requestId, sender, senderId, receiverId }) => {
+    if (!requestId || !sender) return;
+
+    set((state) => {
+      if (state.incomingRequests.some((request) => request._id === requestId)) {
+        return state;
+      }
+
+      return {
+        incomingRequests: [
+          {
+            _id: requestId,
+            senderId: sender,
+            receiverId,
+            status: "pending",
+          },
+          ...state.incomingRequests,
+        ],
+      };
+    });
+  },
+
+  handleFriendRequestAccepted: ({ requestId, sender, receiver }, currentUserId) => {
+    if (!requestId || !sender || !receiver) return;
+
+    set((state) => {
+      const friendToAdd = currentUserId === sender._id ? receiver : sender;
+
+      if (!friendToAdd?._id) {
+        return state;
+      }
+
+      const nextIncomingRequests = state.incomingRequests.filter((request) => request._id !== requestId);
+      const nextOutgoingRequests = state.outgoingRequests.filter((request) => request._id !== requestId);
+
+      const hasFriend = state.friends.some((friend) => friend._id === friendToAdd._id);
+
+      return {
+        incomingRequests: nextIncomingRequests,
+        outgoingRequests: nextOutgoingRequests,
+        friends: hasFriend ? state.friends : [friendToAdd, ...state.friends],
+      };
+    });
+  },
+
   // 🔹 Fetch friends only
   getMyFriends: async () => {
     try {
@@ -75,6 +120,7 @@ export const useFriendStore = create((set, get) => ({
   acceptFriendRequest: async (requestId) => {
     try {
       await axiosInstance.post(`/friend/${requestId}/accept`);
+
       toast.success("Accepted");
       await get().fetchFriendData();
     } catch (error) {

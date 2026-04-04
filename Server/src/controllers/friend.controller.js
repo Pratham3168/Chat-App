@@ -1,5 +1,6 @@
 import FriendRequest from "../models/FriendRequest.js";
 import User from "../models/User.js";
+import { emitToUser } from "../lib/socket.js";
 
 export const searchUsers = async (req, res) => {
   const requesterId = req.user._id;
@@ -82,25 +83,42 @@ export const sendFriendRequest = async (req, res) => {
           return res.status(400).json({ message: "You are already friends" });
         }
 
-        const existingRequest = await FriendRequest.findOne({
+        const activeRequest = await FriendRequest.findOne({
             $or: [
                 { senderId, receiverId },
                 { senderId: receiverId, receiverId: senderId },
             ],
+            status: "pending",
         });
 
-        if(existingRequest){
+        if (activeRequest) {
             return res.status(400).json({ message: "Friend request already exists between these users" });
         }
 
-        const newRequest = new FriendRequest({
-          senderId,
-          receiverId
+        let request = await FriendRequest.findOne({ senderId, receiverId });
+
+        if (request) {
+          request.status = "pending";
+          await request.save();
+        } else {
+          request = new FriendRequest({
+            senderId,
+            receiverId,
+          });
+
+          await request.save();
+        }
+
+        const sender = await User.findById(senderId).select("fullName email profilePic");
+
+        emitToUser(receiverId, "friend:request:created", {
+          requestId: request._id.toString(),
+          sender,
+          senderId: senderId.toString(),
+          receiverId: receiverId.toString(),
         });
 
-        await newRequest.save();
-
-        res.status(201).json({ message: "Friend request sent successfully", request: newRequest });
+        res.status(201).json({ message: "Friend request sent successfully", request });
 
     }catch(err){
 
@@ -137,6 +155,27 @@ export const acceptFriendRequest = async (req, res) => {
         $addToSet: { friends: request.senderId },
       }),
     ]);
+
+    const [sender, receiver] = await Promise.all([
+      User.findById(request.senderId).select("fullName email profilePic"),
+      User.findById(request.receiverId).select("fullName email profilePic"),
+    ]);
+
+    emitToUser(request.senderId.toString(), "friend:request:accepted", {
+      requestId: request._id.toString(),
+      sender,
+      receiver,
+      senderId: request.senderId.toString(),
+      receiverId: request.receiverId.toString(),
+    });
+
+    emitToUser(request.receiverId.toString(), "friend:request:accepted", {
+      requestId: request._id.toString(),
+      sender,
+      receiver,
+      senderId: request.senderId.toString(),
+      receiverId: request.receiverId.toString(),
+    });
 
     res.status(200).json({ message: "Friend request accepted", request });
   } catch (error) {

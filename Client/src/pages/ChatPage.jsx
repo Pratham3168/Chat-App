@@ -13,6 +13,7 @@ import NoConversationPlaceholder from "../components/NoConversationPlaceholder";
 import Sidebar from "../components/SideBar.jsx";
 import Header from "../components/Header.jsx";
 import FriendsList from "../components/FriendsList.jsx";
+import ProfileTab from "../components/ProfileTab.jsx";
 
 function ChatPage() {
   const { activeTab, selectedUser } = useChatStore();
@@ -44,6 +45,7 @@ function ChatPage() {
                 <RequestsOutgoing />
               </>
             )}
+            {(activeTab === "profile" || activeTab === "settings") && <ProfileTab />}
             {/* Privacy-first mode: disable broad contacts list in UI */}
             {/* {activeTab === "settings" && <ContactList />} */}
           </div>

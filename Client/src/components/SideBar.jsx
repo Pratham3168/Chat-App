@@ -2,9 +2,9 @@ import {
   MessageCircle,
   Users,
   Inbox,
-  Settings,
   LogOut,
   Search,
+  User,
 } from "lucide-react";
 
 import { useChatStore } from "../stores/useChatStore";
@@ -15,13 +15,12 @@ const menu = [
   { id: "friends", icon: Users },
   { id: "search", icon: Search },
   { id: "requests", icon: Inbox },
-  { id: "settings", icon: Settings },
 ];
 
 function Sidebar() {
 
     const { activeTab, setActiveTab } = useChatStore();
-    const { logout, authUser, updateProfile } = useAuthStore();
+    const { logout } = useAuthStore();
     
     
 
@@ -59,7 +58,7 @@ function Sidebar() {
           onClick={() => setActiveTab("profile")}
           className="p-3 rounded-xl text-gray-400 hover:bg-[#1e293b] hover:text-white transition"
         >
-          <Settings size={22} />
+          <User size={22} />
         </button>
 
         {/* Logout */}
