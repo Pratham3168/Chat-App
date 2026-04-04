@@ -53,6 +53,15 @@ export const useFriendStore = create((set, get) => ({
     });
   },
 
+  handleFriendRequestRemoved: ({ requestId }) => {
+    if (!requestId) return;
+
+    set((state) => ({
+      incomingRequests: state.incomingRequests.filter((request) => request._id !== requestId),
+      outgoingRequests: state.outgoingRequests.filter((request) => request._id !== requestId),
+    }));
+  },
+
   // 🔹 Fetch friends only
   getMyFriends: async () => {
     try {

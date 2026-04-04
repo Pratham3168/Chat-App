@@ -130,6 +130,14 @@ export const useAuthStore = create((set,get) =>({
         socket.on("friend:request:accepted", (payload) => {
             useFriendStore.getState().handleFriendRequestAccepted(payload, get().authUser?._id);
         });
+
+        socket.on("friend:request:rejected", (payload) => {
+            useFriendStore.getState().handleFriendRequestRemoved(payload);
+        });
+
+        socket.on("friend:request:cancelled", (payload) => {
+            useFriendStore.getState().handleFriendRequestRemoved(payload);
+        });
     },
 
     disconnectSocket : () => {

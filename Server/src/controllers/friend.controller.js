@@ -202,6 +202,16 @@ export const rejectFriendRequest = async (req, res) => {
     request.status = "rejected";
     await request.save();
 
+    const payload = {
+      requestId: request._id.toString(),
+      senderId: request.senderId.toString(),
+      receiverId: request.receiverId.toString(),
+      status: request.status,
+    };
+
+    emitToUser(request.senderId.toString(), "friend:request:rejected", payload);
+    emitToUser(request.receiverId.toString(), "friend:request:rejected", payload);
+
     res.status(200).json({ message: "Friend request rejected", request });
   } catch (error) {
     console.error("Error rejecting friend request:", error);
@@ -224,7 +234,17 @@ export const cancelFriendRequest = async (req, res) => {
       return res.status(404).json({ message: "Friend request not found" });
     }
 
+    const payload = {
+      requestId: request._id.toString(),
+      senderId: request.senderId.toString(),
+      receiverId: request.receiverId.toString(),
+      status: "cancelled",
+    };
+
     await request.deleteOne();
+
+    emitToUser(request.senderId.toString(), "friend:request:cancelled", payload);
+    emitToUser(request.receiverId.toString(), "friend:request:cancelled", payload);
 
     res.status(200).json({ message: "Friend request cancelled" });
   } catch (error) {
