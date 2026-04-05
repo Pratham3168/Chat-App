@@ -3,6 +3,12 @@ import User from "../models/User.js";
 import { emitToUser } from "../lib/socket.js";
 import mongoose from "mongoose";
 
+const getFriendRequestPairKey = (userA, userB) => {
+  const [firstId, secondId] = [userA, userB].map((id) => id.toString()).sort();
+
+  return `${firstId}:${secondId}`;
+};
+
 export const searchUsers = async (req, res) => {
   const requesterId = req.user._id;
   const query = (req.query.q || "").trim();
@@ -68,6 +74,7 @@ export const sendFriendRequest = async (req, res) => {
 
     const { id: receiverId } = req.params;
     const senderId = req.user._id;
+  const pairKey = getFriendRequestPairKey(senderId, receiverId);
 
     try{
         const receiverExists = await User.exists({ _id: receiverId });
@@ -85,10 +92,7 @@ export const sendFriendRequest = async (req, res) => {
         }
 
         const activeRequest = await FriendRequest.findOne({
-            $or: [
-                { senderId, receiverId },
-                { senderId: receiverId, receiverId: senderId },
-            ],
+            pairKey,
             status: "pending",
         });
 
@@ -96,19 +100,12 @@ export const sendFriendRequest = async (req, res) => {
             return res.status(400).json({ message: "Friend request already exists between these users" });
         }
 
-        let request = await FriendRequest.findOne({ senderId, receiverId });
-
-        if (request) {
-          request.status = "pending";
-          await request.save();
-        } else {
-          request = new FriendRequest({
-            senderId,
-            receiverId,
-          });
-
-          await request.save();
-        }
+        const request = await FriendRequest.create({
+          senderId,
+          receiverId,
+          pairKey,
+          status: "pending",
+        });
 
         const sender = await User.findById(senderId).select("fullName email profilePic");
 
@@ -123,6 +120,10 @@ export const sendFriendRequest = async (req, res) => {
 
     }catch(err){
 
+    if (err?.code === 11000) {
+      return res.status(400).json({ message: "Friend request already exists between these users" });
+    }
+
         console.error("Error sending friend request:", err);
         res.status(500).json({ message: "Internal server error" });
 
@@ -135,18 +136,24 @@ export const acceptFriendRequest = async (req, res) => {
   const userId = req.user._id;
 
   try {
-    const request = await FriendRequest.findOne({
-      _id: requestId,
-      receiverId: userId,
-      status: "pending",
-    });
+    // Atomic transition from pending -> accepted prevents double-accept races.
+    const request = await FriendRequest.findOneAndUpdate(
+      {
+        _id: requestId,
+        receiverId: userId,
+        status: "pending",
+      },
+      {
+        $set: { status: "accepted" },
+      },
+      { new: true }
+    );
 
     if (!request) {
-      return res.status(404).json({ message: "Friend request not found" });
+      return res
+        .status(400)
+        .json({ message: "Request already handled or not found" });
     }
-
-    request.status = "accepted";
-    await request.save();
 
     await Promise.all([
       User.findByIdAndUpdate(request.senderId, {
@@ -162,26 +169,21 @@ export const acceptFriendRequest = async (req, res) => {
       User.findById(request.receiverId).select("fullName email profilePic"),
     ]);
 
-    emitToUser(request.senderId.toString(), "friend:request:accepted", {
+    const payload = {
       requestId: request._id.toString(),
       sender,
       receiver,
       senderId: request.senderId.toString(),
       receiverId: request.receiverId.toString(),
-    });
+    };
 
-    emitToUser(request.receiverId.toString(), "friend:request:accepted", {
-      requestId: request._id.toString(),
-      sender,
-      receiver,
-      senderId: request.senderId.toString(),
-      receiverId: request.receiverId.toString(),
-    });
+    emitToUser(request.senderId.toString(), "friend:request:accepted", payload);
+    emitToUser(request.receiverId.toString(), "friend:request:accepted", payload);
 
-    res.status(200).json({ message: "Friend request accepted", request });
+    return res.status(200).json({ message: "Friend request accepted", request });
   } catch (error) {
     console.error("Error accepting friend request:", error);
-    res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -190,18 +192,25 @@ export const rejectFriendRequest = async (req, res) => {
   const userId = req.user._id;
 
   try {
-    const request = await FriendRequest.findOne({
-      _id: requestId,
-      receiverId: userId,
-      status: "pending",
-    });
+    // 🔒 Atomic update
+    const request = await FriendRequest.findOneAndUpdate(
+      {
+        _id: requestId,
+        receiverId: userId,
+        status: "pending",
+      },
+      {
+        $set: { status: "rejected" },
+      },
+      { new: true }
+    );
 
+    // ❌ Already handled or invalid
     if (!request) {
-      return res.status(404).json({ message: "Friend request not found" });
+      return res
+        .status(400)
+        .json({ message: "Request already handled or not found" });
     }
-
-    request.status = "rejected";
-    await request.save();
 
     const payload = {
       requestId: request._id.toString(),
@@ -210,13 +219,17 @@ export const rejectFriendRequest = async (req, res) => {
       status: request.status,
     };
 
+    // 🔔 Emit events
     emitToUser(request.senderId.toString(), "friend:request:rejected", payload);
     emitToUser(request.receiverId.toString(), "friend:request:rejected", payload);
 
-    res.status(200).json({ message: "Friend request rejected", request });
+    return res.status(200).json({
+      message: "Friend request rejected",
+      request,
+    });
   } catch (error) {
     console.error("Error rejecting friend request:", error);
-    res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -225,14 +238,17 @@ export const cancelFriendRequest = async (req, res) => {
   const userId = req.user._id;
 
   try {
-    const request = await FriendRequest.findOne({
+    // 🔒 Atomic delete
+    const request = await FriendRequest.findOneAndDelete({
       _id: requestId,
       senderId: userId,
       status: "pending",
     });
 
     if (!request) {
-      return res.status(404).json({ message: "Friend request not found" });
+      return res.status(400).json({
+        message: "Request already handled or not found",
+      });
     }
 
     const payload = {
@@ -242,15 +258,15 @@ export const cancelFriendRequest = async (req, res) => {
       status: "cancelled",
     };
 
-    await request.deleteOne();
-
     emitToUser(request.senderId.toString(), "friend:request:cancelled", payload);
     emitToUser(request.receiverId.toString(), "friend:request:cancelled", payload);
 
-    res.status(200).json({ message: "Friend request cancelled" });
+    return res.status(200).json({
+      message: "Friend request cancelled",
+    });
   } catch (error) {
     console.error("Error cancelling friend request:", error);
-    res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 

@@ -12,6 +12,11 @@ const friendRequestSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    pairKey: {
+      type: String,
+      required: true,
+      index: true,
+    },
     status: {
       type: String,
       enum: ["pending", "accepted", "rejected"],
@@ -19,6 +24,14 @@ const friendRequestSchema = new mongoose.Schema(
     },
   },
   { timestamps: true }
+);
+
+friendRequestSchema.index(
+  { pairKey: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { status: "pending", pairKey: { $type: "string" } },
+  }
 );
 
 friendRequestSchema.index({ senderId: 1, receiverId: 1 }, { unique: true });
