@@ -8,6 +8,7 @@ import {
   getIncomingRequests,
   getOutgoingRequests,
   rejectFriendRequest,
+  removeFriend,
   searchUsers,
   sendFriendRequest,
 } from "../controllers/friend.controller.js";
@@ -24,5 +25,6 @@ router.post("/send/:id", sendFriendRequest);
 router.post("/:id/accept", acceptFriendRequest);
 router.post("/:id/reject", rejectFriendRequest);
 router.post("/:id/cancel", cancelFriendRequest);
+router.delete("/:id/remove", removeFriend);
 
 export default router;

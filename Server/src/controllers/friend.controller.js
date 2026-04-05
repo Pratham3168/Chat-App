@@ -1,6 +1,7 @@
 import FriendRequest from "../models/FriendRequest.js";
 import User from "../models/User.js";
 import { emitToUser } from "../lib/socket.js";
+import mongoose from "mongoose";
 
 export const searchUsers = async (req, res) => {
   const requesterId = req.user._id;
@@ -262,6 +263,38 @@ export const getMyFriends = async (req, res) => {
     res.status(200).json(user?.friends || []);
   } catch (error) {
     console.error("Error fetching friends list:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+
+export const removeFriend = async (req, res) => {
+  const { id: friendId } = req.params;
+  const userId = req.user._id;
+
+  try {
+    if (!mongoose.Types.ObjectId.isValid(friendId)) {
+      return res.status(400).json({ message: "Invalid friend id" });
+    }
+
+    if (userId.toString() === friendId) {
+      return res.status(400).json({ message: "You cannot remove yourself" });
+    }
+
+    const friendExists = await User.exists({ _id: userId, friends: friendId });
+    if (!friendExists) {
+      return res.status(404).json({ message: "Friend not found in your friends list" });
+    }
+
+    await Promise.all([
+      User.findByIdAndUpdate(userId, { $pull: { friends: friendId } }),
+      User.findByIdAndUpdate(friendId, { $pull: { friends: userId } }),
+    ]);
+
+    res.status(200).json({ message: "Friend removed successfully" });
+
+  } catch (err) {
+    console.error("Error removing friend:", err);
     res.status(500).json({ message: "Internal server error" });
   }
 };

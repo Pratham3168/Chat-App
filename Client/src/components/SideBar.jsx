@@ -9,6 +9,7 @@ import {
 
 import { useChatStore } from "../stores/useChatStore";
 import { useAuthStore } from "../stores/useAuthStore";
+import { useFriendStore } from "../stores/useFriendStore";
 
 const menu = [
   { id: "chats", icon: MessageCircle },
@@ -21,6 +22,7 @@ function Sidebar() {
 
     const { activeTab, setActiveTab } = useChatStore();
     const { logout } = useAuthStore();
+  const incomingCount = useFriendStore((state) => state.incomingRequests?.length || 0);
     
     
 
@@ -44,7 +46,14 @@ function Sidebar() {
                   : "text-gray-400 hover:bg-[#1e293b] hover:text-white"
               }`}
             >
+              <span className="relative inline-flex">
               <Icon size={22} />
+              {item.id === "requests" && incomingCount > 0 && (
+                <span className="absolute -top-2 -right-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">
+                  {incomingCount > 99 ? "99+" : incomingCount}
+                </span>
+              )}
+              </span>
             </button>
           );
         })}

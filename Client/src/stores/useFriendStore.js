@@ -159,6 +159,18 @@ export const useFriendStore = create((set, get) => ({
     }
   },
 
+
+  // 🔹 Remove a friend
+  removeFriend: async (friendId) => {
+    try{
+      await axiosInstance.delete(`/friend/${friendId}/remove`);
+      toast.success("Friend Removed");
+      await get().fetchFriendData();
+    }catch(error){
+      toast.error(error.response?.data?.message || "Failed to remove friend");
+    }
+  },
+
   // 🔹 THIS is the only helper you need
   getRelationshipStatus: (userId) => {
     const { friends, incomingRequests, outgoingRequests } = get();

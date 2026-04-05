@@ -42,6 +42,24 @@ io.on("connection", (socket) => {
 
     io.emit("getOnlineUsers" , Object.keys(userSocketsMap));
 
+    socket.on("typing:start", ({ toUserId } = {}) => {
+        if (!toUserId) return;
+        if (String(toUserId) === String(userId)) return;
+
+        emitToUser(String(toUserId), "typing:started", {
+            fromUserId: userId,
+        });
+    });
+
+    socket.on("typing:stop", ({ toUserId } = {}) => {
+        if (!toUserId) return;
+        if (String(toUserId) === String(userId)) return;
+
+        emitToUser(String(toUserId), "typing:stopped", {
+            fromUserId: userId,
+        });
+    });
+
     socket.on("disconnect" , () => { 
         console.log("A user disconnected : ", socket.user.fullName);
         delete userSocketsMap[userId];

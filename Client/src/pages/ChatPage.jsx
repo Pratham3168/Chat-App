@@ -1,4 +1,7 @@
+import { useEffect } from "react";
 import { useChatStore } from "../stores/useChatStore";
+import { useAuthStore } from "../stores/useAuthStore";
+import { useFriendStore } from "../stores/useFriendStore";
 
 import BorderAnimatedContainer from "../components/BorderAnimatedContainer";
 import ProfileHeader from "../components/ProfileHeader";
@@ -16,7 +19,21 @@ import FriendsList from "../components/FriendsList.jsx";
 import ProfileTab from "../components/ProfileTab.jsx";
 
 function ChatPage() {
-  const { activeTab, selectedUser } = useChatStore();
+  const { activeTab, selectedUser, subscribeToMessages, unsubscribeToMessages } = useChatStore();
+  const { socket } = useAuthStore();
+  const { getIncomingRequests } = useFriendStore();
+
+  useEffect(() => {
+    subscribeToMessages();
+
+    return () => {
+      unsubscribeToMessages();
+    };
+  }, [socket, subscribeToMessages, unsubscribeToMessages]);
+
+  useEffect(() => {
+    getIncomingRequests();
+  }, [getIncomingRequests]);
 
   return (
     <div className="relative w-full h-full">
