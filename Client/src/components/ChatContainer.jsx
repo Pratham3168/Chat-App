@@ -6,6 +6,58 @@ import NoChatHistoryPlaceholder from "./NoChatHistoryPlaceholder";
 import MessageInput from "./MessageInput";
 import MessagesLoadingSkeleton from "./MessagesLoadingSkeleton"; 
 
+// Message Status Indicator Component
+const MessageStatusIcon = ({ status }) => {
+  if (!status) return null;
+
+  if (status === "sent") {
+    return (
+      <svg
+        className="w-4 h-4 inline-block ml-1"
+        fill="currentColor"
+        viewBox="0 0 20 20"
+        title="Sent"
+      >
+        <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" />
+      </svg>
+    );
+  }
+
+  if (status === "delivered") {
+    return (
+      <svg
+        className="w-4 h-4 inline-block ml-1"
+        fill="currentColor"
+        viewBox="0 0 20 20"
+        title="Delivered"
+      >
+        <g>
+          <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" />
+          <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" transform="translate(-2, 0)" />
+        </g>
+      </svg>
+    );
+  }
+
+  if (status === "read") {
+    return (
+      <svg
+        className="w-4 h-4 inline-block ml-1 text-red-400"
+        fill="currentColor"
+        viewBox="0 0 20 20"
+        title="Read"
+      >
+        <g>
+          <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" />
+          <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" transform="translate(-2, 0)" />
+        </g>
+      </svg>
+    );
+  }
+
+  return null;
+};
+
 function ChatContainer() {
   const {
     selectedUser,
@@ -36,11 +88,11 @@ function ChatContainer() {
             {messages.map((msg) => (
               <div
                 key={msg._id}
-                className={`chat ${msg.senderId === authUser._id ? "chat-end" : "chat-start"}`}
+                className={`chat ${String(msg.senderId) === String(authUser._id) ? "chat-end" : "chat-start"}`}
               >
                 <div
                   className={`chat-bubble max-w-2xl rounded-5xl relative ${
-                    msg.senderId === authUser._id
+                    String(msg.senderId) === String(authUser._id)
                       ? "bg-cyan-600 text-white"
                       : "bg-slate-800 text-slate-200"
                   }`}
@@ -49,12 +101,17 @@ function ChatContainer() {
                     <img src={msg.image} alt="Shared" className="rounded-lg h-48 object-cover" />
                   )}
                   {msg.text && <p className="mt-2">{msg.text}</p>}
-                  <p className="text-xs mt-1 opacity-75 flex items-center gap-1">
-                    {new Date(msg.createdAt).toLocaleTimeString(undefined, {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
+                  <div className="text-xs mt-1 opacity-75 flex items-center justify-between">
+                    <span>
+                      {new Date(msg.createdAt).toLocaleTimeString(undefined, {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                    {String(msg.senderId) === String(authUser._id) && (
+                      <MessageStatusIcon status={msg.status} />
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

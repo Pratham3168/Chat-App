@@ -15,7 +15,6 @@ const friendRequestSchema = new mongoose.Schema(
     pairKey: {
       type: String,
       required: true,
-      index: true,
     },
     status: {
       type: String,

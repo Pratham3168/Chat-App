@@ -28,6 +28,16 @@ export const useChatStore = create((set, get) => ({
         return { selectedUser };
       }
 
+      // Emit mark as read event
+    const socket = useAuthStore.getState().socket;
+    const { authUser } = useAuthStore.getState();
+    if (socket && authUser?._id) {
+      socket.emit("markMessagesAsRead", {
+        senderId: selectedUser._id,
+        receiverId: authUser._id,
+      });
+    }
+
       const nextUnreadByUser = { ...state.unreadByUser };
       delete nextUnreadByUser[selectedUser._id];
 
@@ -96,6 +106,7 @@ export const useChatStore = create((set, get) => ({
       text: messageData.text,
       image: messageData.image,
       createdAt: new Date().toISOString(),
+      status: "sent",
       isOptimistic: true,
     };
 
@@ -126,10 +137,13 @@ export const useChatStore = create((set, get) => ({
     socket.off("newMessage");
     socket.off("typing:started");
     socket.off("typing:stopped");
+    socket.off("messageStatusUpdated");
+    socket.off("messagesRead");
 
     socket.on("newMessage", (newMessage) => {
       const { authUser } = useAuthStore.getState();
-      if (!authUser?._id || newMessage.receiverId !== authUser._id) return;
+      if (!authUser?._id) return;
+      if (String(newMessage.receiverId) !== String(authUser._id)) return;
 
       const selectedUser = get().selectedUser;
       const isSoundEnabled = get().isSoundEnabled;
@@ -157,6 +171,12 @@ export const useChatStore = create((set, get) => ({
             : chats;
 
         if (isMessageSentFromSelectedUser) {
+          // If chat is open, notify sender immediately that this message is read.
+          socket.emit("markMessagesAsRead", {
+            senderId,
+            receiverId: String(authUser._id),
+          });
+
           return {
             chats: reorderedChats,
             messages: [...state.messages, newMessage],
@@ -200,6 +220,46 @@ export const useChatStore = create((set, get) => ({
         set({ isSelectedUserTyping: false });
       }
     });
+
+    // NEW: Listen for message status updates
+    socket.on("messageStatusUpdated", ({ messageId, status }) => {
+      set((state) => ({
+        messages: state.messages.map((msg) =>
+          String(msg._id) === String(messageId) ? { ...msg, status } : msg
+        ),
+      }));
+    });
+
+    // NEW: Listen for read receipts
+    socket.on("messagesRead", ({ senderId, receiverId }) => {
+      const { authUser } = useAuthStore.getState();
+      // This event is sent to the original sender, so auth user must match senderId.
+      if (String(authUser?._id) === String(senderId)) {
+        set((state) => ({
+          messages: state.messages.map((msg) =>
+            String(msg.senderId) === String(senderId) &&
+            String(msg.receiverId) === String(receiverId)
+              ? { ...msg, status: "read" }
+              : msg
+          ),
+        }));
+      }
+    });
+
+  },
+
+  // NEW: Update messages when user opens a chat
+  markMessagesAsRead: async (selectedUserId) => {
+    const socket = useAuthStore.getState().socket;
+    const { authUser } = useAuthStore.getState();
+    
+    if (!socket || !authUser?._id) return;
+
+    // Emit socket event so sender knows messages are read
+    socket.emit("markMessagesAsRead", {
+      senderId: selectedUserId,
+      receiverId: authUser._id,
+    });
   },
 
   unsubscribeToMessages: () => {
@@ -207,6 +267,8 @@ export const useChatStore = create((set, get) => ({
     socket.off("newMessage");
     socket.off("typing:started");
     socket.off("typing:stopped");
+    socket.off("messageStatusUpdated");
+    socket.off("messagesRead");
     set({ isSelectedUserTyping: false });
   },
 }));

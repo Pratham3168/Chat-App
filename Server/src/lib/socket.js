@@ -2,6 +2,7 @@ import {Server} from 'socket.io';
 import http from 'http';
 import express from 'express';
 import { socketAuthMiddleware } from '../middlewares/socket.auth.middleware.js';
+import Message from '../models/Message.js';
 
 const app = express();
 
@@ -58,6 +59,31 @@ io.on("connection", (socket) => {
         emitToUser(String(toUserId), "typing:stopped", {
             fromUserId: userId,
         });
+    });
+
+    socket.on("markMessagesAsRead", async ({ senderId, receiverId }) => {
+        try {
+            if (!senderId || !receiverId) return;
+
+            await Message.updateMany(
+                {
+                    senderId,
+                    receiverId,
+                    status: { $ne: "read" },
+                },
+                { $set: { status: "read" } }
+            );
+
+            const senderSocketId = getReceiverSocketId(String(senderId));
+            if (senderSocketId) {
+                io.to(senderSocketId).emit("messagesRead", {
+                    senderId,
+                    receiverId,
+                });
+            }
+        } catch (error) {
+            console.error("Error marking messages as read:", error);
+        }
     });
 
     socket.on("disconnect" , () => { 
