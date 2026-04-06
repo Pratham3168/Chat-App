@@ -3,7 +3,6 @@ import { useChatStore } from "../stores/useChatStore";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useFriendStore } from "../stores/useFriendStore";
 
-import BorderAnimatedContainer from "../components/BorderAnimatedContainer";
 import ProfileHeader from "../components/ProfileHeader";
 import ActiveTabSwitch from "../components/ActiveTabSwitch";
 import ChatsList from "../components/ChatsList";
@@ -37,7 +36,7 @@ function ChatPage() {
 
   return (
     <div className="relative w-full h-full">
-      <BorderAnimatedContainer>
+      <div className="flex w-full h-full overflow-hidden rounded-none bg-slate-900/50 backdrop-blur-sm">
 
         <div>
           <Sidebar />
@@ -72,7 +71,7 @@ function ChatPage() {
         <div className="flex-1 flex flex-col bg-slate-900/50 backdrop-blur-sm">
           {selectedUser ? <ChatContainer /> : <NoConversationPlaceholder />}
         </div>
-      </BorderAnimatedContainer>
+      </div>
     </div>
   );
 }
