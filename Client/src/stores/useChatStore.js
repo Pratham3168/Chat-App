@@ -15,6 +15,9 @@ export const useChatStore = create((set, get) => ({
   isSelectedUserTyping: false,
   isMessagesLoading: false,
   isSoundEnabled: JSON.parse(localStorage.getItem("isSoundEnabled")) === true,
+  messageCursor: null,
+hasMoreMessages: true,
+isLoadingMoreMessages: false,
 
   toggleSound: () => {
     localStorage.setItem("isSoundEnabled", !get().isSoundEnabled);
@@ -88,27 +91,107 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
-  getMessagesByUserId: async (userId) => {
-    // SECURITY: Verify user is a friend before fetching messages
-    const chats = get().chats || [];
-    const isFriend = chats.some((chat) => String(chat._id) === String(userId));
+  // getMessagesByUserId: async (userId) => {
+  //   // SECURITY: Verify user is a friend before fetching messages
+  //   const chats = get().chats || [];
+  //   const isFriend = chats.some((chat) => String(chat._id) === String(userId));
 
-    if (!isFriend) {
-      toast.error("You can only view messages with friends");
-      set({ messages: [] });
-      return;
+  //   if (!isFriend) {
+  //     toast.error("You can only view messages with friends");
+  //     set({ messages: [] });
+  //     return;
+  //   }
+
+  //   set({ isMessagesLoading: true });
+  //   try {
+  //     const res = await axiosInstance.get(`/message/${userId}`);
+  //     set({ messages: res.data });
+  //   } catch (error) {
+  //     toast.error(error.response?.data?.message || "Failed to fetch messages");
+  //   } finally {
+  //     set({ isMessagesLoading: false });
+  //   }
+  // },
+
+ getMessagesByUserId: async (userId, options = { reset: true }) => {
+  const reset = options?.reset !== false;
+
+  const chats = get().chats || [];
+  const isFriend = chats.some((chat) => String(chat._id) === String(userId));
+
+  if (!isFriend) {
+    toast.error("You can only view messages with friends");
+    set({
+      messages: [],
+      messageCursor: null,
+      hasMoreMessages: true,
+    });
+    return;
+  }
+
+  if (reset) {
+    set({
+      isMessagesLoading: true,
+      messages: [],
+      messageCursor: null,
+      hasMoreMessages: true,
+    });
+  } else {
+    const state = get();
+    if (!state.hasMoreMessages || state.isLoadingMoreMessages || !state.messageCursor) return;
+    set({ isLoadingMoreMessages: true });
+  }
+
+  try {
+    const state = get();
+
+    const res = await axiosInstance.get("/message/" + userId, {
+      params: {
+        limit: 20,
+        cursor: reset ? undefined : String(state.messageCursor),
+      },
+    });
+
+    const incoming = Array.isArray(res.data?.messages) ? res.data.messages : [];
+    const hasMore = Boolean(res.data?.hasMore);
+    const nextCursor = res.data?.nextCursor ?? null;
+
+    if (reset) {
+      set({
+        messages: incoming,
+        hasMoreMessages: hasMore,
+        messageCursor: nextCursor,
+      });
+    } else {
+      // Deduplicate by _id while prepending older page
+      set((prev) => {
+        const seen = new Set(prev.messages.map((m) => String(m._id)));
+        const uniqueIncoming = incoming.filter((m) => !seen.has(String(m._id)));
+
+        return {
+          messages: [...uniqueIncoming, ...prev.messages],
+          hasMoreMessages: hasMore,
+          messageCursor: nextCursor,
+        };
+      });
     }
-
-    set({ isMessagesLoading: true });
-    try {
-      const res = await axiosInstance.get(`/message/${userId}`);
-      set({ messages: res.data });
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to fetch messages");
-    } finally {
+  } catch (error) {
+    toast.error(error.response?.data?.message || "Failed to fetch messages");
+  } finally {
+    if (reset) {
       set({ isMessagesLoading: false });
+    } else {
+      set({ isLoadingMoreMessages: false });
     }
-  },
+  }
+},
+
+loadOlderMessages: async () => {
+  const selectedUser = get().selectedUser;
+  if (!selectedUser?._id) return;
+  await get().getMessagesByUserId(selectedUser._id, { reset: false });
+},
+
 
   sendMessage: async (messageData) => {
     const { selectedUser } = get();

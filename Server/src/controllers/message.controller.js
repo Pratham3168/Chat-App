@@ -18,43 +18,112 @@ export const getAllContacts = async (req, res) => {
   }
 };
 
+// export const getMessagesByUserId = async (req, res) => {
+//   try {
+//     const myId = req.user._id;
+//     const { id: userToChat } = req.params;
+
+//     const messages = await Message.find({
+//       $or: [
+//         { senderId: myId, receiverId: userToChat },
+//         { senderId: userToChat, receiverId: myId },
+//       ],
+//     }).sort({ createdAt: 1 });
+
+//     // Mark unread messages as read
+//     await Message.updateMany(
+//         {
+//             senderId: userToChat,
+//             receiverId: myId,
+//             status: {$ne: "read"},
+//         },
+//         { $set: { status: "read" } }
+//     );
+
+//     // Emit socket event to notify sender that messages are read
+//     const userSocketId = getReceiverSocketId(userToChat);
+//     if (userSocketId) {
+//       io.to(userSocketId).emit("messagesRead", {
+//         senderId: userToChat,
+//         receiverId: myId,
+//       });
+//     }
+
+//     res.status(200).json(messages);
+//   } catch (error) {
+//     console.error("Error fetching messages:", error);
+//     res.status(500).json({ message: "Internal server error" });
+//   }
+// };
+
 export const getMessagesByUserId = async (req, res) => {
   try {
     const myId = req.user._id;
     const { id: userToChat } = req.params;
 
-    const messages = await Message.find({
+    const parsedLimit = Number(req.query.limit);
+    const limit = Number.isFinite(parsedLimit)
+      ? Math.min(Math.max(parsedLimit, 1), 50)
+      : 20;
+
+    const cursor = req.query.cursor;
+
+    const query = {
       $or: [
         { senderId: myId, receiverId: userToChat },
         { senderId: userToChat, receiverId: myId },
       ],
-    }).sort({ createdAt: 1 });
+    };
 
-    // Mark unread messages as read
-    await Message.updateMany(
-        {
-            senderId: userToChat,
-            receiverId: myId,
-            status: {$ne: "read"},
-        },
-        { $set: { status: "read" } }
-    );
-
-    // Emit socket event to notify sender that messages are read
-    const userSocketId = getReceiverSocketId(userToChat);
-    if (userSocketId) {
-      io.to(userSocketId).emit("messagesRead", {
-        senderId: userToChat,
-        receiverId: myId,
-      });
+    // Cursor means "give me messages older than this _id"
+    if (cursor) {
+      query._id = { $lt: cursor };
     }
 
-    res.status(200).json(messages);
+    // Fetch newest first for efficient cursor pagination
+    const docs = await Message.find(query).sort({ _id: -1 }).limit(limit + 1);
+
+    const hasMore = docs.length > limit;
+    const page = hasMore ? docs.slice(0, limit) : docs;
+
+    
+    // Use oldest item in this page as next cursor
+    const nextCursor =
+    hasMore && page.length > 0 ? page[page.length - 1]._id : null;
+    
+    // Return oldest -> newest for rendering
+    const messages = page.reverse();
+    // Mark as read only when opening first page
+    if (!cursor) {
+      await Message.updateMany(
+        {
+          senderId: userToChat,
+          receiverId: myId,
+          status: { $ne: "read" },
+        },
+        { $set: { status: "read" } }
+      );
+
+      const userSocketId = getReceiverSocketId(userToChat);
+      if (userSocketId) {
+        io.to(userSocketId).emit("messagesRead", {
+          senderId: userToChat,
+          receiverId: myId,
+        });
+      }
+    }
+
+    res.status(200).json({
+      messages,
+      hasMore,
+      nextCursor,
+    });
   } catch (error) {
     console.error("Error fetching messages:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 export const sendMessage = async (req, res) => {
   try {

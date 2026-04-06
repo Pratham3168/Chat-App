@@ -59,22 +59,34 @@ const MessageStatusIcon = ({ status }) => {
 };
 
 function ChatContainer() {
+  // const {
+  //   selectedUser,
+  //   getMessagesByUserId,
+  //   messages,
+  //   isMessagesLoading,
+  // } = useChatStore();
   const {
-    selectedUser,
-    getMessagesByUserId,
-    messages,
-    isMessagesLoading,
-  } = useChatStore();
+  selectedUser,
+  getMessagesByUserId,
+  loadOlderMessages,
+  messages,
+  isMessagesLoading,
+  hasMoreMessages,
+  isLoadingMoreMessages,
+} = useChatStore();
   const { authUser } = useAuthStore();
+
+  // const messageEndRef = useRef(null);
+const messagesListRef = useRef(null);
 
   const messageEndRef = useRef(null);
 
   // Fetch initial messages when user changes
   useEffect(() => {
     if (selectedUser?._id) {
-      getMessagesByUserId(selectedUser._id);
+      getMessagesByUserId(selectedUser._id,{reset:true});
     }
-  }, [selectedUser, getMessagesByUserId]);
+  }, [selectedUser?._id, getMessagesByUserId]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -83,12 +95,39 @@ function ChatContainer() {
     }
   }, [messages, isMessagesLoading]);
 
+  const handleShowOlder = async () => {
+  const listEl = messagesListRef.current;
+  if (!listEl) return;
+
+  const prevScrollHeight = listEl.scrollHeight;
+  const prevScrollTop = listEl.scrollTop;
+
+  await loadOlderMessages();
+
+  requestAnimationFrame(() => {
+    const newScrollHeight = listEl.scrollHeight;
+    listEl.scrollTop = newScrollHeight - prevScrollHeight + prevScrollTop;
+  });
+};
+
   return (
     <>
       <ChatHeader />
-      <div className="flex-1 px-6 overflow-y-auto py-8">
+      <div ref={messagesListRef} className="flex-1 px-6 overflow-y-auto py-8">
         {messages.length > 0 && !isMessagesLoading ? (
           <div className="max-w-7xl mx-auto space-y-6">
+            {hasMoreMessages && (
+  <div className="flex justify-center">
+    <button
+      type="button"
+      onClick={handleShowOlder}
+      disabled={isLoadingMoreMessages}
+      className="px-4 py-2 rounded-full bg-slate-700 text-slate-100 text-xs hover:bg-slate-600 disabled:opacity-60 mb-2"
+    >
+      {isLoadingMoreMessages ? "Loading..." : "Show older messages"}
+    </button>
+  </div>
+)}
             {messages.map((msg) => (
               <div
                 key={msg._id}
