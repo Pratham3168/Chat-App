@@ -22,10 +22,21 @@ export const useChatStore = create((set, get) => ({
   },
 
   setActiveTab: (tab) => set({ activeTab: tab }),
+  
   setSelectedUser: (selectedUser) =>
     set((state) => {
       if (!selectedUser?._id) {
         return { selectedUser };
+      }
+
+      // SECURITY: Verify selected user is in chat list (i.e., is a friend)
+      const isFriend = (state.chats || []).some(
+        (chat) => String(chat._id) === String(selectedUser._id)
+      );
+
+      if (!isFriend) {
+        toast.error("You can only chat with friends");
+        return state; // Don't update selectedUser
       }
 
       // Emit mark as read event
@@ -78,6 +89,16 @@ export const useChatStore = create((set, get) => ({
   },
 
   getMessagesByUserId: async (userId) => {
+    // SECURITY: Verify user is a friend before fetching messages
+    const chats = get().chats || [];
+    const isFriend = chats.some((chat) => String(chat._id) === String(userId));
+
+    if (!isFriend) {
+      toast.error("You can only view messages with friends");
+      set({ messages: [] });
+      return;
+    }
+
     set({ isMessagesLoading: true });
     try {
       const res = await axiosInstance.get(`/message/${userId}`);

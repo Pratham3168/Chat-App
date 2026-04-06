@@ -69,15 +69,19 @@ function ChatContainer() {
 
   const messageEndRef = useRef(null);
 
+  // Fetch initial messages when user changes
   useEffect(() => {
-    getMessagesByUserId(selectedUser._id);
+    if (selectedUser?._id) {
+      getMessagesByUserId(selectedUser._id);
+    }
   }, [selectedUser, getMessagesByUserId]);
 
+  // Auto-scroll to bottom when messages change
   useEffect(() => {
-    if (messageEndRef.current) {
+    if (messageEndRef.current && !isMessagesLoading) {
       messageEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages]);
+  }, [messages, isMessagesLoading]);
 
   return (
     <>
