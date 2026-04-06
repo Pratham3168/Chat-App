@@ -107,16 +107,16 @@ emitTypingStop();
   };
 
   useEffect(() => {
-return () => {
-clearTypingTimer();
-emitTypingStop();
-};
-}, [selectedUser?._id, socket]);
+    return () => {
+      clearTypingTimer();
+      emitTypingStop();
+    };
+  }, [selectedUser?._id, socket]);
 
   return (
-    <div className="p-4 border-t border-slate-700/50">
+    <div className="border-t border-slate-700/50 bg-slate-900/40 p-3">
       {imagePreview && (
-        <div className="max-w-3xl mx-auto mb-3 flex items-center">
+        <div className="mb-3 flex items-center">
           <div className="relative">
             <img
               src={imagePreview}
@@ -136,13 +136,13 @@ emitTypingStop();
 
       <form
         onSubmit={handleSendMessage}
-        className="max-w-3xl mx-auto flex space-x-4"
+        className="flex items-center gap-2"
       >
         <input
           type="text"
           value={text}
           onChange={handleTextChange}
-          className="flex-1 bg-slate-800/50 border border-slate-700/50 rounded-lg py-2 px-4"
+          className="min-w-0 flex-1 rounded-lg border border-slate-700/50 bg-slate-800/50 px-4 py-2 text-slate-100 outline-none transition-colors placeholder:text-slate-500 focus:border-cyan-500/60"
           placeholder="Type your message..."
         />
 
@@ -157,7 +157,7 @@ emitTypingStop();
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className={`bg-slate-800/50 text-slate-400 hover:text-slate-200 rounded-lg px-4 transition-colors ${
+          className={`shrink-0 rounded-lg bg-slate-800/50 px-3 py-2 text-slate-400 transition-colors hover:text-slate-200 ${
             imagePreview ? "text-cyan-500" : ""
           }`}
         >
@@ -166,7 +166,7 @@ emitTypingStop();
         <button
           type="submit"
           disabled={!text.trim() && !imagePreview}
-          className="bg-gradient-to-r from-cyan-500 to-cyan-600 text-white rounded-lg px-4 py-2 font-medium hover:from-cyan-600 hover:to-cyan-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="shrink-0 rounded-lg bg-linear-to-r from-cyan-500 to-cyan-600 px-3 py-2 font-medium text-white transition-all hover:from-cyan-600 hover:to-cyan-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <SendIcon className="w-5 h-5" />
         </button>

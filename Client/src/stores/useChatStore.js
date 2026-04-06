@@ -210,27 +210,139 @@ loadOlderMessages: async () => {
       text: messageData.text,
       image: messageData.image,
       createdAt: new Date().toISOString(),
-      status: "sent",
+      status: "sending",
       isOptimistic: true,
     };
 
     set((state) => ({ messages: [...state.messages, optimisticMessage] }));
+
+    if (!navigator.onLine) {
+      set((state) => ({
+        messages: state.messages.map((msg) =>
+          msg._id === tempId ? { ...msg, status: "failed" } : msg,
+        ),
+      }));
+      toast.error("You are offline. Message marked as failed.");
+      return;
+    }
 
     try {
       const res = await axiosInstance.post(
         `/message/send/${selectedUser._id}`,
         messageData,
       );
+
+      const serverMessage = {
+        ...res.data,
+        status: res.data?.status || "sent",
+      };
+
       set((state) => ({
         messages: state.messages.map((msg) =>
-          msg._id === tempId ? res.data : msg,
+          msg._id === tempId ? serverMessage : msg,
         ),
       }));
     } catch (err) {
       set((state) => ({
-        messages: state.messages.filter((msg) => msg._id !== tempId),
+        messages: state.messages.map((msg) =>
+          msg._id === tempId ? { ...msg, status: "failed" } : msg,
+        ),
       }));
-      toast.error(err.response?.data?.message || "Failed to send message");
+
+      const isNetworkError = err.code === "ECONNABORTED" || !err.response;
+      toast.error(
+        isNetworkError
+          ? "Message not sent. Check your connection and retry."
+          : err.response?.data?.message || "Failed to send message",
+      );
+    }
+  },
+
+  retryMessage: async (messageId) => {
+    const state = get();
+    const message = state.messages.find((msg) => String(msg._id) === String(messageId));
+
+    if (!message || message.status !== "failed") return;
+
+    const { authUser } = useAuthStore.getState();
+    if (!authUser?._id || String(message.senderId) !== String(authUser._id)) return;
+
+    const selectedUserId = state.selectedUser?._id;
+    const toUserId = message.receiverId || selectedUserId;
+    if (!toUserId) return;
+
+    set((prev) => ({
+      messages: prev.messages.map((msg) =>
+        String(msg._id) === String(messageId)
+          ? { ...msg, status: "sending" }
+          : msg,
+      ),
+    }));
+
+    if (!navigator.onLine) {
+      set((prev) => ({
+        messages: prev.messages.map((msg) =>
+          String(msg._id) === String(messageId)
+            ? { ...msg, status: "failed" }
+            : msg,
+        ),
+      }));
+      return;
+    }
+
+    try {
+      const payload = {
+        text: message.text || "",
+        image: message.image || "",
+      };
+
+      const res = await axiosInstance.post(`/message/send/${toUserId}`, payload);
+      const serverMessage = {
+        ...res.data,
+        status: res.data?.status || "sent",
+      };
+
+      set((prev) => ({
+        messages: prev.messages.map((msg) =>
+          String(msg._id) === String(messageId) ? serverMessage : msg,
+        ),
+      }));
+    } catch (err) {
+      set((prev) => ({
+        messages: prev.messages.map((msg) =>
+          String(msg._id) === String(messageId)
+            ? { ...msg, status: "failed" }
+            : msg,
+        ),
+      }));
+
+      const isNetworkError = err.code === "ECONNABORTED" || !err.response;
+      toast.error(
+        isNetworkError
+          ? "Retry failed. You may still be offline."
+          : err.response?.data?.message || "Failed to resend message",
+      );
+    }
+  },
+
+  retryFailedMessagesForSelectedUser: async () => {
+    const state = get();
+    const selectedUserId = state.selectedUser?._id;
+    const { authUser } = useAuthStore.getState();
+
+    if (!selectedUserId || !authUser?._id) return;
+
+    const failedIds = state.messages
+      .filter(
+        (msg) =>
+          msg.status === "failed" &&
+          String(msg.senderId) === String(authUser._id) &&
+          String(msg.receiverId) === String(selectedUserId),
+      )
+      .map((msg) => msg._id);
+
+    for (const failedId of failedIds) {
+      await get().retryMessage(failedId);
     }
   },
 

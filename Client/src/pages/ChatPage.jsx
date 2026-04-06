@@ -35,15 +35,16 @@ function ChatPage() {
   }, [getIncomingRequests]);
 
   return (
-    <div className="relative w-full h-full">
-      <div className="flex w-full h-full overflow-hidden rounded-none bg-slate-900/50 backdrop-blur-sm">
-
-        <div>
-          <Sidebar />
-        </div>
+    <div className="relative h-full w-full min-h-0">
+      <div className="flex h-full w-full overflow-hidden rounded-none bg-slate-900/50 backdrop-blur-sm">
+        <Sidebar />
 
         {/* LEFT SIDE */}
-        <div className="w-[20%] bg-slate-800/50 backdrop-blur-sm flex flex-col">
+        <div
+          className={`bg-slate-800/50 backdrop-blur-sm flex-col pb-16 lg:pb-0 lg:flex lg:w-[20%] ${
+            selectedUser ? "hidden lg:flex" : "flex w-full"
+          }`}
+        >
           {/* <ProfileHeader /> */}
           <Header />
           {/* <ActiveTabSwitch /> */}
@@ -68,7 +69,11 @@ function ChatPage() {
         </div>
 
         {/* RIGHT SIDE */}
-        <div className="flex-1 flex flex-col bg-slate-900/50 backdrop-blur-sm">
+        <div
+          className={`flex-1 flex-col bg-slate-900/50 backdrop-blur-sm min-h-0 min-w-0 pb-16 lg:pb-0 ${
+            selectedUser ? "flex w-full" : "hidden lg:flex"
+          }`}
+        >
           {selectedUser ? <ChatContainer /> : <NoConversationPlaceholder />}
         </div>
       </div>

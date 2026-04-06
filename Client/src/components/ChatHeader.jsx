@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useChatStore } from "../stores/useChatStore";
-import { XIcon } from "lucide-react";
+import { ArrowLeftIcon } from "lucide-react";
 import { useAuthStore } from "../stores/useAuthStore";
 
 function ChatHeader() {
@@ -24,10 +24,18 @@ function ChatHeader() {
 
   return (
     <div
-      className="flex justify-between items-center bg-slate-800/50 border-b
-    border-slate-700/50 max-h-21 px-6 flex-1"
+      className="flex items-center justify-between border-b border-slate-700/50 bg-slate-800/50 px-4 py-3 shrink-0 sm:px-6"
     >
-      <div className="flex items-center space-x-3">
+      <div className="flex min-w-0 items-center gap-3">
+        <button
+          type="button"
+          onClick={() => setSelectedUser(null)}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-300 transition-colors hover:bg-slate-700/60 hover:text-white lg:hidden"
+          aria-label="Back to conversations"
+        >
+          <ArrowLeftIcon className="h-5 w-5" />
+        </button>
+
         <div
           className={`avatar ${isOnline ? "avatar-online" : "avatar-offline"}`}
         >
@@ -39,8 +47,8 @@ function ChatHeader() {
           </div>
         </div>
 
-        <div>
-          <h3 className="text-slate-200 font-medium">
+        <div className="min-w-0">
+          <h3 className="truncate font-medium text-slate-200">
             {selectedUser.fullName}
           </h3>
           {isSelectedUserTyping ? (
@@ -57,10 +65,6 @@ function ChatHeader() {
           )}
         </div>
       </div>
-
-      <button onClick={() => setSelectedUser(null)}>
-        <XIcon className="w-5 h-5 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer" />
-      </button>
     </div>
   );
 }

@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Camera, Save } from "lucide-react";
+import { Camera, LogOut, Save } from "lucide-react";
 import { useAuthStore } from "../stores/useAuthStore";
+import ConfirmDialog from "./ConfirmDialog";
 
 function ProfileTab() {
-	const { authUser, updateProfile } = useAuthStore();
+	const { authUser, updateProfile, logout } = useAuthStore();
 	const [fullName, setFullName] = useState(authUser?.fullName || "");
 	const [preview, setPreview] = useState(authUser?.profilePic || "/avatar.png");
 	const [selectedImg, setSelectedImg] = useState("");
 	const [isUploading, setIsUploading] = useState(false);
 	const [imageFileUploadProgress, setImageFileUploadProgress] = useState(0);
 	const [isSaving, setIsSaving] = useState(false);
+	const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 	const uploadIntervalRef = useRef(null);
 
 	useEffect(() => {
@@ -115,6 +117,12 @@ function ProfileTab() {
 		setIsSaving(false);
 	}
 };
+
+	const handleConfirmLogout = () => {
+		setShowLogoutDialog(false);
+		logout();
+	};
+
 	return (
 		<form onSubmit={handleSubmit} className="rounded-xl border border-slate-700/60 bg-slate-900/70 p-4 space-y-4">
 			<h3 className="text-sm font-semibold text-slate-200">Profile Settings</h3>
@@ -164,14 +172,35 @@ function ProfileTab() {
 				/>
 			</div>
 
-			<button
-				type="submit"
-				disabled={!canSave || isSaving}
-				className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-500 text-slate-900 font-medium hover:bg-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-			>
-				<Save size={16} />
-				{isSaving ? "Saving..." : "Save Changes"}
-			</button>
+			<div className="flex flex-wrap items-center gap-2">
+				<button
+					type="submit"
+					disabled={!canSave || isSaving}
+					className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-500 text-slate-900 font-medium hover:bg-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+				>
+					<Save size={16} />
+					{isSaving ? "Saving..." : "Save Changes"}
+				</button>
+
+				<button
+					type="button"
+					onClick={() => setShowLogoutDialog(true)}
+					className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-rose-500/40 text-rose-300 hover:bg-rose-500/15 transition-colors"
+				>
+					<LogOut size={16} />
+					Logout
+				</button>
+			</div>
+
+			<ConfirmDialog
+				open={showLogoutDialog}
+				title="Logout"
+				message="Do you want to logout?"
+				confirmLabel="Logout"
+				cancelLabel="Cancel"
+				onConfirm={handleConfirmLogout}
+				onCancel={() => setShowLogoutDialog(false)}
+			/>
 		</form>
 	);
 }
