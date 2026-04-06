@@ -224,6 +224,18 @@ export const getChatPartners = async (req, res) => {
       _id: { $in: friendsWithMessages },
     }).select("-password");
 
+    const unreadMessages = await Message.find({
+      senderId: { $in: friendIds },
+      receiverId: loggedInUserId,
+      status: { $ne: "read" },
+    }).select("senderId");
+
+    const unreadByUser = unreadMessages.reduce((accumulator, message) => {
+      const senderId = message.senderId.toString();
+      accumulator[senderId] = (accumulator[senderId] || 0) + 1;
+      return accumulator;
+    }, {});
+
     // Sort by most recent message
     const sortedPartners = chatPartners.sort((a, b) => {
       const msgA = messages.find(
@@ -239,7 +251,12 @@ export const getChatPartners = async (req, res) => {
       return new Date(msgB?.createdAt || 0) - new Date(msgA?.createdAt || 0);
     });
 
-    res.status(200).json(sortedPartners);
+    res.status(200).json(
+      sortedPartners.map((partner) => ({
+        ...partner.toObject(),
+        unreadCount: unreadByUser[partner._id.toString()] || 0,
+      })),
+    );
   } catch (error) {
     console.error("Error fetching chat partners:", error);
     res.status(500).json({ message: "Internal server error" });

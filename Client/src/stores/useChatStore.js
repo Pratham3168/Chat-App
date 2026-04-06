@@ -81,7 +81,15 @@ isLoadingMoreMessages: false,
 
     try {
       const res = await axiosInstance.get("/message/chats");
-      set({ chats: res.data });
+      const chats = Array.isArray(res.data) ? res.data : [];
+      const unreadByUser = chats.reduce((accumulator, chat) => {
+        if (chat?.unreadCount > 0) {
+          accumulator[chat._id] = chat.unreadCount;
+        }
+        return accumulator;
+      }, {});
+
+      set({ chats, unreadByUser });
     } catch (error) {
       toast.error(
         error.response?.data?.message || "Failed to fetch chat partners",

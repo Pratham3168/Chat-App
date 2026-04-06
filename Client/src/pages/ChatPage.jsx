@@ -18,7 +18,7 @@ import FriendsList from "../components/FriendsList.jsx";
 import ProfileTab from "../components/ProfileTab.jsx";
 
 function ChatPage() {
-  const { activeTab, selectedUser, subscribeToMessages, unsubscribeToMessages } = useChatStore();
+  const { activeTab, selectedUser, subscribeToMessages, unsubscribeToMessages, getMyChatPartners } = useChatStore();
   const { socket } = useAuthStore();
   const { getIncomingRequests } = useFriendStore();
 
@@ -33,6 +33,22 @@ function ChatPage() {
   useEffect(() => {
     getIncomingRequests();
   }, [getIncomingRequests]);
+
+  useEffect(() => {
+    if (socket?.connected) {
+      getMyChatPartners();
+    }
+
+    const handleSocketConnect = () => {
+      getMyChatPartners();
+    };
+
+    socket?.on("connect", handleSocketConnect);
+
+    return () => {
+      socket?.off("connect", handleSocketConnect);
+    };
+  }, [socket, getMyChatPartners]);
 
   return (
     <div className="relative h-full w-full min-h-0">
