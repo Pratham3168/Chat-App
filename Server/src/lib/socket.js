@@ -4,13 +4,22 @@ import express from 'express';
 import { socketAuthMiddleware } from '../middlewares/socket.auth.middleware.js';
 import Message from '../models/Message.js';
 
+const CLIENT_ORIGINS = (process.env.CLIENT_URL || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
 const app = express();
 
 const server = http.createServer(app);
 
 const io = new Server(server, {
     cors:{
-        origin : process.env.CLIENT_URL,
+        origin(origin, callback) {
+            if (!origin) return callback(null, true);
+            if (CLIENT_ORIGINS.includes(origin)) return callback(null, true);
+            return callback(new Error('Socket.IO CORS origin not allowed'));
+        },
         credentials : true
     },
 });

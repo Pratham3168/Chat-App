@@ -13,7 +13,7 @@ function Header() {
 
         {/* LEFT */}
         <h1 className="text-xl font-semibold text-white tracking-wide">
-          Chat App
+          ConvoX
         </h1>
 
         {/* RIGHT BUTTONS */}
